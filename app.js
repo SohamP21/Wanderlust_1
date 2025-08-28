@@ -14,6 +14,7 @@ const ExpressError = require("./utils/ExpressError.js");
 const { listingSchema , reviewSchema } = require("./schema.js");
 const Review = require("./models/review.js");
 const session = require("express-session");
+const MongoStore = require('connect-mongo');
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
@@ -24,7 +25,7 @@ const reviews = require("./routes/review.js");
 const user = require("./routes/user.js");
 
 
-const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
+const dbUrl = process.env.ATLASDB_URL;
 
 main()
     .then(()=> {
@@ -35,17 +36,38 @@ main()
     console.log(err);
     });
 async function main() {
-    await mongoose.connect(MONGO_URL);
+    await mongoose.connect(dbUrl);
+
 }
+
+
+app.listen (8080, ()=> {
+    console.log("server is running on port 8080");
+}) ;
+
 app.set("view engine", 'ejs');
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({extended: true}));
 app.use(methodOverride("_method"));
 app.engine('ejs' , ejsMate);
 
-const sessionOptions = {
-    secret : "mysupersecretcode",
-    resave : false,
+const store = MongoStore.create({
+    mongoUrl : dbUrl,
+    crypto : {
+        secret : process.env.SECRET,
+    },
+    touchAfter : 24 * 60 * 60,
+});
+
+store.on("error", () => {
+    console.log("ERROR IN MONGO SESSION STORE" ,err);
+});
+
+
+const sessionOptions = { 
+    store,      
+    secret : process.env.SECRET,
+    resave : false, 
     saveUninitialized : true,
     cookie : {
         expires : Date.now() + 7 * 24 * 60 * 60 * 1000,
@@ -56,7 +78,6 @@ const sessionOptions = {
 // app.get("/", (req,res)=> {
 //     res.send("Hi, I am root.");
 // });
-
 
 app.use(session(sessionOptions));
 app.use(flash());
@@ -164,7 +185,3 @@ app.delete("/listings/:id", async(req,res)=> {
 
 
 
-
-app.listen (8080, ()=> {
-    console.log("server is running on port 8080");
-}) ;
