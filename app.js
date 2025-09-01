@@ -34,12 +34,23 @@ main()
 
     })
     .catch(err => {
-    console.log(err);
+    console.log("Database connection error:", err);
     });
 async function main() {
     await mongoose.connect(dbUrl);
-
 }
+
+// async function main() {
+//   await mongoose.connect(dbUrl, {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true,
+//     tls: true,
+//     // For debugging SSL issues, you could temporarily allow invalid certs:
+//     // tlsAllowInvalidCertificates: true,    // NOT recommended for production
+//     serverSelectionTimeoutMS: 30000,
+//   });
+// }
+
 
 
 app.listen (8080, ()=> {
